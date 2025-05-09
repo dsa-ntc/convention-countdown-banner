@@ -1,4 +1,10 @@
 // get colors from settings
+$countdown-bg-color-setting: discovery-get('countdown_banner_background_color');
+$countdown-text-color-setting: discovery-get('countdown_banner_text_color');
+
+$default-bg-color-scss: #F7C35E; 
+$default-text-color-scss: #0F3A5D; 
+
 $countdown-bg-color: discovery-get('countdown_banner_background_color');
 $countdown-text-color: discovery-get('countdown_banner_text_color');
 
@@ -8,7 +14,11 @@ $countdown-text-color: discovery-get('countdown_banner_text_color');
   text-align: center;
   width: 100%;
   box-sizing: border-box; 
-  border-bottom: 1px solid darken($countdown-bg-color, 10%); // slightly darker border
+  @if type-of($countdown-bg-color) == color {
+    border-bottom: 1px solid darken($countdown-bg-color, 10%); // slightly darker border
+  } @else {
+    border-bottom: 1px solid $default-bg-color-scss;
+  }
 
   .custom-countdown-banner-text {
     color: $countdown-text-color;
