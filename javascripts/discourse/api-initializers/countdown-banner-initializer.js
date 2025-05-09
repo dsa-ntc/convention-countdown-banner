@@ -42,8 +42,8 @@ export default apiInitializer("0.11.1", (api) => {
     return h("div.custom-countdown-banner", bannerContent);
   }
 
-  api.decorateWidget("header:after", (helper) => {
-    // could also try "above-main-container:before" 
+  api.decorateWidget("above-main-container:before", (helper) => {
+    // could also try "above-main-container:before" or "header:after"
 
     const siteSettings = helper.widget.container.lookup("service:site-settings");
 
