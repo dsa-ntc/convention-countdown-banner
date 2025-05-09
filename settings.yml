@@ -1,0 +1,24 @@
+countdown_target_date:
+  type: string
+  description: "Target date and time for the countdown (e.g., 'YYYY-MM-DDTHH:MM:SSZ' like 2025-12-31T23:59:59Z for UTC, or 'Month DD, YYYY HH:MM:SS' like 'December 31, 2025 15:00:00' for local time interpreted by the browser)."
+  default: "2025-05-12T02:59:00.0000-07:00"
+
+countdown_event_text:
+  type: string
+  description: "The text to display after the countdown timer."
+  default: "until the signature deadline for non-amendment proposals!"
+
+countdown_banner_background_color:
+  type: string
+  description: "Background color for the banner (hex code)."
+  default: "#F7C35E"
+
+countdown_banner_text_color:
+  type: string
+  description: "Text color for the banner (hex code)."
+  default: "#0F3A5D"
+
+countdown_banner_enabled:
+  type: bool
+  default: true
+  description: "Enable or disable the countdown banner."
