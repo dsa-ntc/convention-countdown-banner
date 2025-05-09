@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Banner</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; 
+            background-color: #F7C35E; 
+            color: #0F3A5D;       
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 45px; 
+            overflow: hidden;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        #countdown-container {
+            padding: 5px 15px; 
+        }
+
+        #countdown-text {
+            font-size: 0.9em;   
+            font-weight: 500; 
+            line-height: 1.4;   
+        }
+
+        #countdown-text strong {
+            font-weight: 700; 
+        }
+    </style>
+</head>
+<body>
+    <div id="countdown-container">
+        <div id="countdown-text">Loading countdown...</div>
+    </div>
+
+    <script>
+        // hardcode the target date and text
+        const hardcodedTargetDateString = "2025-05-12T09:59:00.000Z"; 
+        const hardcodedEventText = "until the signature deadline for non-amendment proposals!";
+
+        // get from URL parameters
+        // .html?targetDate=YYYY-MM-DDTHH:MM:SSZ&eventText=text
+        const urlParams = new URLSearchParams(window.location.search);
+        const targetDateFromURL = urlParams.get('targetDate'); 
+        const eventTextFromURL = urlParams.get('eventText');
+
+        // use URL parameters if provided, otherwise use hardcoded values
+        const targetDateString = targetDateFromURL || hardcodedTargetDateString;
+        const eventText = eventTextFromURL || hardcodedEventText;
+
+        const countdownElement = document.getElementById('countdown-text');
+
+        const targetDate = new Date(targetDateString).getTime();
+
+        function updateCountdown() {
+            if (!targetDate || isNaN(targetDate)) {
+                countdownElement.textContent = "Error: Invalid target date configured.";
+                if (interval) clearInterval(interval);
+                return;
+            }
+
+            const now = new Date().getTime();
+            const distance = targetDate - now;
+
+            if (distance < 0) {
+                countdownElement.innerHTML = "The signature deadline has passed for non-amendment proposals!"; 
+                if (interval) clearInterval(interval);
+                return;
+            }
+
+            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            // const seconds = Math.floor((distance % (1000 * 60)) / 1000); // Uncomment for seconds
+
+            countdownElement.innerHTML = `<strong>${days} days, ${hours} hours, ${minutes} minutes</strong> remaining ${eventText}`;
+        }
+
+        let interval; // Declare interval variable in a scope accessible to clearInterval
+
+        if (targetDate && !isNaN(targetDate) && targetDate > new Date().getTime()) {
+            interval = setInterval(updateCountdown, 60000); // Update every minute
+        }
+        updateCountdown(); // Initial call to display immediately
+    </script>
+</body>
+</html>
