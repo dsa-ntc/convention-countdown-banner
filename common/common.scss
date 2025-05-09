@@ -1,0 +1,30 @@
+// get colors from settings
+$countdown-bg-color: discovery-get('countdown_banner_background_color');
+$countdown-text-color: discovery-get('countdown_banner_text_color');
+
+.custom-countdown-banner {
+  background-color: $countdown-bg-color;
+  padding: 10px 15px;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box; 
+  border-bottom: 1px solid darken($countdown-bg-color, 10%); // slightly darker border
+
+  .custom-countdown-banner-text {
+    color: $countdown-text-color;
+    font-size: $font-up-1; // variable for slightly larger font
+    font-weight: 500; 
+
+    strong {
+      font-weight: 700; 
+    }
+  }
+}
+
+// adjust placement if using specific outlets
+// if it's inside the header, might not need margin.
+// if it's above everything, might be fine as is.
+
+body.docked .custom-countdown-banner {
+  // z-index: z('header') + 1; // if it needs to be above the sticky header
+}
