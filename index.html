@@ -3,92 +3,198 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Countdown Banner</title>
+    <title>countdown banner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
             padding: 0;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif; 
-            background-color: #ffa000; 
+            font-family: 'Montserrat', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+            background-color: #ffa000; /* match currently existing buttons */
             color: #000000;       
             display: flex;
             justify-content: center;
             align-items: center;
             height: 45px; 
-            overflow: hidden;
+            overflow: hidden; /* prevents scrollbars if content slightly overflows */
             text-align: center;
-            box-sizing: border-box;
+            box-sizing: border-box; /* ensures padding doesn't add to height/width */
         }
 
         #countdown-container {
-            padding: 5px 15px; 
+            padding: 5px 15px; /* add some padding around the text */
         }
 
         #countdown-text {
             font-size: 1em;   
-            font-weight: 500; 
-            line-height: 1.4;   
+            font-weight: 700; /* set base font weight to 700 for montserrat */
+            line-height: 1.4;   /* adjust for vertical centering if needed */
         }
 
-        #countdown-text strong {
-            font-weight: 700; 
-        }
+        /* strong tag will inherit font-weight: 700 from #countdown-text */
     </style>
 </head>
 <body>
     <div id="countdown-container">
-        <div id="countdown-text">Loading countdown...</div>
+        <div id="countdown-text">loading countdown...</div>
     </div>
 
     <script>
-        // hardcode the target date and text
-        const hardcodedTargetDateString = "2025-05-12T09:59:00.000Z"; 
-        const hardcodedEventText = "until the signature deadline for non-amendment proposals!";
-
-        // get from URL parameters
-        // .html?targetDate=YYYY-MM-DDTHH:MM:SSZ&eventText=text
-        const urlParams = new URLSearchParams(window.location.search);
-        const targetDateFromURL = urlParams.get('targetDate'); 
-        const eventTextFromURL = urlParams.get('eventText');
-
-        // use URL parameters if provided, otherwise use hardcoded values
-        const targetDateString = targetDateFromURL || hardcodedTargetDateString;
-        const eventText = eventTextFromURL || hardcodedEventText;
-
         const countdownElement = document.getElementById('countdown-text');
+        let interval; // declare interval variable
 
-        const targetDate = new Date(targetDateString).getTime();
+        // --- configuration: event stages ---
+        // dates should be in utc (iso 8601 format with 'z') for universal timing.
+        const eventStages = [
+            {
+                type: "countdown", // indicates this stage is a countdown
+                targetDateISO: "2025-05-12T09:59:00.000Z",
+                eventText: "until the signature deadline for non-amendment proposals!"
+            },
+            {
+                type: "countdown",
+                targetDateISO: "2025-06-30T09:59:00.000Z",
+                eventText: "until the signature deadline for amendments!"
+            },
+            {
+                type: "countdown",
+                targetDateISO: "2025-07-14T09:59:00.000Z",
+                eventText: "until Convention registration closes!"
+            },
+            {
+                type: "countdown",
+                targetDateISO: "2025-08-08T15:00:00.000Z", // updated time
+                eventText: "until the 2025 National Convention!"
+            },
+            {
+                type: "message", // indicates this stage displays a message
+                endDateISO: "2025-08-10T21:00:00.000Z", // when this message should stop showing
+                messageText: "The 2025 DSA National Convention is underway!"
+            },
+            {
+                type: "final_message", // a message that shows after all other stages
+                messageText: "The 2025 DSA National Convention has concluded!"
+            }
+        ];
 
-        function updateCountdown() {
-            if (!targetDate || isNaN(targetDate)) {
-                countdownElement.textContent = "Error: Invalid target date configured.";
+        let currentStageIndex = -1;
+        let currentStageConfig;
+
+        function determineCurrentStage() {
+            const now = new Date().getTime();
+            currentStageIndex = -1; // reset
+            currentStageConfig = null;
+
+            for (let i = 0; i < eventStages.length; i++) {
+                const stage = eventStages[i];
+                if (stage.type === "countdown") {
+                    const stageTargetTime = new Date(stage.targetDateISO).getTime();
+                    if (now < stageTargetTime) {
+                        currentStageIndex = i;
+                        currentStageConfig = stage;
+                        return true; // found an active countdown stage
+                    }
+                } else if (stage.type === "message") {
+                    const stageEndTime = new Date(stage.endDateISO).getTime();
+                    if (now < stageEndTime) {
+                        currentStageIndex = i;
+                        currentStageConfig = stage;
+                        return true; // found an active message stage
+                    }
+                } else if (stage.type === "final_message") {
+                    // this stage is selected if no other stages are active
+                    currentStageIndex = i;
+                    currentStageConfig = stage;
+                    return true;
+                }
+            }
+            return false; // should not happen if final_message is present
+        }
+
+
+        function updateDisplay() {
+            if (!currentStageConfig) {
+                countdownElement.textContent = "loading configuration..."; // should be brief
                 if (interval) clearInterval(interval);
                 return;
             }
 
             const now = new Date().getTime();
-            const distance = targetDate - now;
 
-            if (distance < 0) {
-                countdownElement.innerHTML = "The signature deadline has passed for non-amendment proposals!"; 
-                if (interval) clearInterval(interval);
-                return;
+            if (currentStageConfig.type === "countdown") {
+                const targetDate = new Date(currentStageConfig.targetDateISO).getTime();
+                const distance = targetDate - now;
+
+                if (distance < 0) {
+                    // current countdown ended, try to find the next stage
+                    if (determineCurrentStage()) {
+                        // a new stage was found, recursion will handle display via interval
+                        // or if the next stage is a message, display it immediately
+                        if (currentStageConfig.type === "message") {
+                             countdownElement.textContent = currentStageConfig.messageText;
+                             if (interval) clearInterval(interval); // stop countdown interval
+                             interval = setInterval(updateDisplay, 5000); // check message stage end periodically
+                        } else if (currentStageConfig.type === "final_message"){
+                             countdownElement.textContent = currentStageConfig.messageText;
+                             if (interval) clearInterval(interval);
+                        }
+                        // if next stage is another countdown, the interval will pick it up.
+                        // for immediate update: updateCountdownHtml(new_distance, new_text)
+                    } else {
+                        // this case should ideally be handled by the final_message stage
+                        countdownElement.textContent = "all events have concluded.";
+                        if (interval) clearInterval(interval);
+                    }
+                    return;
+                }
+                updateCountdownHtml(distance, currentStageConfig.eventText);
+
+            } else if (currentStageConfig.type === "message") {
+                const endDate = new Date(currentStageConfig.endDateISO).getTime();
+                if (now >= endDate) {
+                    // message stage ended, try to find the next stage (should be final_message)
+                    if (determineCurrentStage() && currentStageConfig.type === "final_message") {
+                        countdownElement.textContent = currentStageConfig.messageText;
+                    } else {
+                         countdownElement.textContent = "all events have concluded."; // fallback
+                    }
+                    if (interval) clearInterval(interval); // stop periodic check
+                } else {
+                    countdownElement.textContent = currentStageConfig.messageText;
+                }
+            } else if (currentStageConfig.type === "final_message") {
+                countdownElement.textContent = currentStageConfig.messageText;
+                if (interval) clearInterval(interval); // ensure no interval is running
             }
+        }
 
+        function updateCountdownHtml(distance, eventTextForDisplay) {
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
             const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            // const seconds = Math.floor((distance % (1000 * 60)) / 1000); // Uncomment for seconds
 
-            countdownElement.innerHTML = `<strong>${days} days, ${hours} hours, ${minutes} minutes</strong> remaining ${eventText}`;
+            countdownElement.innerHTML = `<strong>${days} days, ${hours} hours, ${minutes} minutes</strong> remaining ${eventTextForDisplay}`;
         }
 
-        let interval; // Declare interval variable in a scope accessible to clearInterval
+        // --- initialization ---
+        if (determineCurrentStage()) {
+            if (interval) clearInterval(interval); // clear any previous interval
 
-        if (targetDate && !isNaN(targetDate) && targetDate > new Date().getTime()) {
-            interval = setInterval(updateCountdown, 60000); // Update every minute
+            if (currentStageConfig.type === "countdown") {
+                interval = setInterval(updateDisplay, 60000); // update countdown every minute
+            } else if (currentStageConfig.type === "message") {
+                // for message stages, we check less frequently, just to see if it has ended
+                interval = setInterval(updateDisplay, 5000); // check every 5 seconds
+            }
+            // no interval needed for final_message as it's static
+            updateDisplay(); // initial call to display immediately
+        } else {
+            // this case should ideally not be reached if a final_message stage exists
+            countdownElement.textContent = "all scheduled events have concluded.";
         }
-        updateCountdown(); // Initial call to display immediately
+
     </script>
 </body>
 </html>
